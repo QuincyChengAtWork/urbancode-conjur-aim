@@ -1,4 +1,5 @@
 import com.urbancode.air.AirPluginTool;
+import com.urbancode.air.plugin.cyberark.UCDRestHelper;
 
 final airTool = new AirPluginTool(args[0], args[1])
 
@@ -9,6 +10,7 @@ def theAppID = props['appid'] ?: ""
 def theSafe = props['safe'] ?: ""
 def theFolder = props['folder'] ?: ""
 def theObject = props['object'] ?: ""
+def isSecure = Boolean.valueOf(props['isSecure'])
 
 thePath = thePath.trim()
 theAppID = theAppID.trim()
@@ -38,10 +40,17 @@ println("Get Password from Vault - Stop")
 
 String[] results = out.toString().split(",")
 
-airTool.setOutputProperty("Password", results[0].trim());
-airTool.setOutputProperty("Address", results[1].trim());
-airTool.setOutputProperty("Username", results[2].trim());
+if (isSecure) {
+    UCDRestHelper ucdHelper = new UCDRestHelper()
+    def componentProcessId = props['componentProcessId']
+    ucdHelper.setProcessProperty(results[0], "CyberArk/password", componentProcessId, true)
+    ucdHelper.setProcessProperty(results[1], "CyberArk/address", componentProcessId, false)
+    ucdHelper.setProcessProperty(results[2], "CyberArk/username", componentProcessId, false)
+}
+else {
+    airTool.setOutputProperty("Password", results[0].trim())
+    airTool.setOutputProperty("Address", results[1].trim())
+    airTool.setOutputProperty("Username", results[2].trim())
 
-airTool.storeOutputProperties();
-
-
+    airTool.storeOutputProperties()
+}
